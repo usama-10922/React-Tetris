@@ -12,27 +12,39 @@ import { StyledTetrisWrapper, StyledTetris } from "./styles/StyledTetris";
 import { usePlayer } from "../hooks/usePlayer";
 import { useStage } from "../hooks/useStage";
 
-import { createStage } from "../gameHelpers";
+import { createStage, checkCollision } from "../gameHelpers";
 
 const Tetris = () => {
 	const [dropTime, setDropTime] = useState(null);
 	const [gameOver, setGameOver] = useState(false);
 
-	const [player, updatePlayerPos, resetPlayer] = usePlayer();
+	const [player, updatePlayerPos, resetPlayer, playerRotate] = usePlayer();
 	const [stage, setStage] = useStage(player, resetPlayer);
 
 	const movePlayer = direction => {
-		updatePlayerPos({ x: direction, y: 0 });
+		if (!checkCollision(player, stage, { x: direction, y: 0 }))
+			updatePlayerPos({ x: direction, y: 0 });
 	};
 
 	const startGame = () => {
 		// Reset Everything
 		setStage(createStage());
 		resetPlayer();
+		setGameOver(false);
 	};
 
 	const drop = () => {
-		updatePlayerPos({ x: 0, y: 1, collided: false });
+		if (!checkCollision(player, stage, { x: 0, y: 1 })) {
+			updatePlayerPos({ x: 0, y: 1, collided: false });
+		} else {
+			// Game Over
+			if (player.pos.y < 1) {
+				console.log("GAME OVER !!!");
+				setGameOver(true);
+				setDropTime(null);
+			}
+			updatePlayerPos({ x: 0, y: 0, collided: true });
+		}
 	};
 
 	const dropPlayer = () => {
@@ -47,6 +59,12 @@ const Tetris = () => {
 			} else if (keyCode === 39) {
 				// Right Pressed
 				movePlayer(1);
+			} else if (keyCode === 40) {
+				// Down Pressed
+				dropPlayer();
+			} else if (keyCode === 38) {
+				// Up Pressed
+				playerRotate(stage, 1);
 			}
 		}
 	};
